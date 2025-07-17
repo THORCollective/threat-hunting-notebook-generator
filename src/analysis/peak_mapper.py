@@ -234,16 +234,25 @@ class PEAKMapper:
         }
     
     def _generate_search_queries(self, indicators: List[ThreatIndicator]) -> List[str]:
-        """Generate search queries for the execute phase."""
+        """Generate search queries in Splunk Processing Language (SPL) format."""
         queries = []
         
         for indicator in indicators:
             if indicator.indicator_type == 'malware':
-                queries.append(f"process_name:*{indicator.value}* OR file_name:*{indicator.value}*")
+                queries.append(f'index=* (process_name="*{indicator.value}*" OR file_name="*{indicator.value}*")')
             elif indicator.indicator_type == 'behaviors':
-                queries.append(f"event_type:{indicator.value} OR description:*{indicator.value}*")
+                queries.append(f'index=* (event_type="{indicator.value}" OR description="*{indicator.value}*")')
+            elif indicator.indicator_type == 'tools':
+                queries.append(f'index=* (process_name="*{indicator.value}*" OR command_line="*{indicator.value}*")')
+            elif indicator.indicator_type == 'iocs':
+                queries.append(f'index=* (src_ip="{indicator.value}" OR dest_ip="{indicator.value}" OR domain="*{indicator.value}*")')
+            elif indicator.indicator_type == 'apt':
+                queries.append(f'index=* (signature="*{indicator.value}*" OR threat_name="*{indicator.value}*")')
         
-        return queries if queries else ["event_type:process_creation", "event_type:network_connection"]
+        return queries if queries else [
+            'index=* eventtype=process_creation',
+            'index=* eventtype=network_connection'
+        ]
     
     def _generate_analysis_steps(self, hunt_type: HuntType, indicators: List[ThreatIndicator]) -> List[str]:
         """Generate analysis steps for the execute phase."""
