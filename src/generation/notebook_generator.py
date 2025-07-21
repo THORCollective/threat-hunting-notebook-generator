@@ -13,22 +13,32 @@ class NotebookGenerator:
     def __init__(self):
         self.notebook_version = 4
     
-    def generate_notebook(self, hunts: List[PEAKHunt], article_data: Dict[str, Any]) -> nbf.NotebookNode:
+    def generate_notebook(self, hunts: List[PEAKHunt], article_data: Dict[str, Any], enable_colab: bool = True) -> nbf.NotebookNode:
         """
         Generate a Jupyter notebook from PEAK hunts.
         
         Args:
             hunts: List of PEAK hunting scenarios
             article_data: Original article data
+            enable_colab: Whether to add Google Colab compatibility
             
         Returns:
             Jupyter notebook object
         """
         nb = nbf.v4.new_notebook()
         
+        # Add Google Colab metadata if enabled
+        if enable_colab:
+            self._add_colab_metadata(nb, article_data)
+        
         # Add title and metadata
-        nb.cells.append(self._create_title_cell(article_data))
+        nb.cells.append(self._create_title_cell(article_data, enable_colab))
         nb.cells.append(self._create_overview_cell(hunts))
+        
+        # Add Colab setup if enabled
+        if enable_colab:
+            nb.cells.append(self._create_colab_setup_cell())
+        
         nb.cells.append(self._create_imports_cell())
         
         # Add cells for each hunt
@@ -45,7 +55,63 @@ class NotebookGenerator:
         with open(output_path, 'w') as f:
             nbf.write(notebook, f)
     
-    def _create_title_cell(self, article_data: Dict[str, Any]) -> nbf.NotebookNode:
+    def generate_colab_url(self, github_repo: str, notebook_path: str) -> str:
+        """
+        Generate Google Colab URL for a notebook hosted on GitHub.
+        
+        Args:
+            github_repo: GitHub repository in format 'owner/repo'
+            notebook_path: Path to notebook within repository
+            
+        Returns:
+            Google Colab URL
+        """
+        return f"https://colab.research.google.com/github/{github_repo}/blob/main/{notebook_path}"
+    
+    def _add_colab_metadata(self, nb: nbf.NotebookNode, article_data: Dict[str, Any]):
+        """Add Google Colab metadata to notebook."""
+        title = article_data.get('title', 'Threat Hunting Notebook')
+        
+        nb.metadata = {
+            "colab": {
+                "name": f"{title}.ipynb",
+                "provenance": [],
+                "collapsed_sections": [],
+                "toc_visible": True
+            },
+            "kernelspec": {
+                "display_name": "Python 3",
+                "name": "python3"
+            },
+            "language_info": {
+                "name": "python",
+                "version": "3.8.10"
+            }
+        }
+    
+    def _create_colab_setup_cell(self) -> nbf.NotebookNode:
+        """Create Colab-specific setup cell for dependencies."""
+        code = """# Google Colab Setup
+# This cell installs required packages in Google Colab environment
+
+import sys
+IN_COLAB = 'google.colab' in sys.modules
+
+if IN_COLAB:
+    print("Running in Google Colab - Installing required packages...")
+    !pip install -q pandas numpy matplotlib seaborn nbformat
+    
+    # Mount Google Drive (optional - uncomment if you want to save results)
+    # from google.colab import drive
+    # drive.mount('/content/drive')
+    
+    print("Setup complete!")
+else:
+    print("Not running in Colab - assuming packages are already installed")"""
+        
+        return nbf.v4.new_code_cell(code)
+    
+    def _create_title_cell(self, article_data: Dict[str, Any], enable_colab: bool = False) -> nbf.NotebookNode:
         """Create title cell with article information."""
         title = article_data.get('title', 'Unknown Article')
         source = article_data.get('source', 'Unknown Source')
@@ -55,7 +121,21 @@ class NotebookGenerator:
         
 **Source:** {source}  
 **Generated:** {generated_date}  
-**Framework:** PEAK (Prepare, Execute, Act with Knowledge)
+**Framework:** PEAK (Prepare, Execute, Act with Knowledge)"""
+
+        if enable_colab:
+            # Generate GitHub repository URL for Colab badge (assumes GitHub hosting)
+            repo_url = "https://github.com/your-org/threat-hunting-notebook-generator"
+            notebook_path = f"notebooks/{title.replace(' ', '_').lower()}_hunt.ipynb"
+            colab_url = f"https://colab.research.google.com/github/your-org/threat-hunting-notebook-generator/blob/main/{notebook_path}"
+            
+            markdown += f"""
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({colab_url})
+
+> **💡 Tip**: Click the "Open in Colab" badge above to run this notebook in Google Colab with zero setup required!"""
+
+        markdown += """
 
 ## About This Notebook
 

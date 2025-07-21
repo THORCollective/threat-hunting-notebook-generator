@@ -30,6 +30,17 @@ def main():
         action="store_true",
         help="Enable verbose output"
     )
+    parser.add_argument(
+        "--enable-colab",
+        action="store_true",
+        default=True,
+        help="Enable Google Colab integration (default: True)"
+    )
+    parser.add_argument(
+        "--github-repo",
+        default="your-org/threat-hunting-notebook-generator",
+        help="GitHub repository for Colab links (format: owner/repo)"
+    )
     
     args = parser.parse_args()
     
@@ -74,13 +85,19 @@ def main():
             print("Generating notebook...")
         
         generator = NotebookGenerator()
-        notebook = generator.generate_notebook(hunts, article_data)
+        notebook = generator.generate_notebook(hunts, article_data, enable_colab=args.enable_colab)
         
         # Save notebook
         generator.save_notebook(notebook, str(output_path))
         
         print(f"Successfully generated threat hunting notebook: {output_path}")
         print(f"Created {len(hunts)} PEAK hunting scenarios")
+        
+        if args.enable_colab:
+            notebook_name = output_path.name
+            colab_url = generator.generate_colab_url(args.github_repo, f"notebooks/{notebook_name}")
+            print(f"Google Colab URL: {colab_url}")
+            print("📊 To run in Colab: Upload notebook to GitHub and use the generated URL")
         
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)
