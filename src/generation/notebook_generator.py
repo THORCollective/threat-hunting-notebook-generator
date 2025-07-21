@@ -289,12 +289,10 @@ print(f"Data sources: {{', '.join(hunt_config['data_sources'])}}")"""
             markdown += f"\n{i}. {step}"
         
         markdown += "\n\n#### Search Queries"
-        for query in hunt.execute_phase.get('search_queries', []):
-            markdown += f"\n```\n{query}\n```"
+        markdown += "\n```\n# Add your search queries here\n# Example: process_name:*suspicious* OR event_type:*malicious*\n\n```"
         
         markdown += "\n\n#### Detection Logic"
-        for logic in hunt.execute_phase.get('detection_logic', []):
-            markdown += f"\n- {logic}"
+        markdown += "\n```\n# Add your detection logic here\n# Example: IF condition THEN action\n# IF process_name CONTAINS 'malware' THEN flag_high_priority\n\n```"
         
         return nbf.v4.new_markdown_cell(markdown)
     

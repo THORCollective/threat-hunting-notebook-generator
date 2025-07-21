@@ -234,25 +234,9 @@ class PEAKMapper:
         }
     
     def _generate_search_queries(self, indicators: List[ThreatIndicator]) -> List[str]:
-        """Generate search queries in Splunk Processing Language (SPL) format."""
-        queries = []
-        
-        for indicator in indicators:
-            if indicator.indicator_type == 'malware':
-                queries.append(f'index=* (process_name="*{indicator.value}*" OR file_name="*{indicator.value}*")')
-            elif indicator.indicator_type == 'behaviors':
-                queries.append(f'index=* (event_type="{indicator.value}" OR description="*{indicator.value}*")')
-            elif indicator.indicator_type == 'tools':
-                queries.append(f'index=* (process_name="*{indicator.value}*" OR command_line="*{indicator.value}*")')
-            elif indicator.indicator_type == 'iocs':
-                queries.append(f'index=* (src_ip="{indicator.value}" OR dest_ip="{indicator.value}" OR domain="*{indicator.value}*")')
-            elif indicator.indicator_type == 'apt':
-                queries.append(f'index=* (signature="*{indicator.value}*" OR threat_name="*{indicator.value}*")')
-        
-        return queries if queries else [
-            'index=* eventtype=process_creation',
-            'index=* eventtype=network_connection'
-        ]
+        """Generate empty search queries template for user to fill in."""
+        # Return empty list so users can add their own queries
+        return []
     
     def _generate_analysis_steps(self, hunt_type: HuntType, indicators: List[ThreatIndicator]) -> List[str]:
         """Generate analysis steps for the execute phase."""
@@ -272,16 +256,9 @@ class PEAKMapper:
         return steps
     
     def _generate_detection_logic(self, indicators: List[ThreatIndicator]) -> List[str]:
-        """Generate detection logic based on indicators."""
-        logic = []
-        
-        for indicator in indicators:
-            if indicator.indicator_type == 'malware':
-                logic.append(f"IF process_name CONTAINS '{indicator.value}' THEN flag_high_priority")
-            elif indicator.indicator_type == 'behaviors':
-                logic.append(f"IF behavior MATCHES '{indicator.value}' THEN investigate_further")
-        
-        return logic if logic else ["IF anomalous_activity THEN investigate"]
+        """Generate empty detection logic template for user to fill in."""
+        # Return empty list so users can add their own detection logic
+        return []
     
     def _create_documentation_template(self) -> Dict[str, str]:
         """Create documentation template for the act phase."""
